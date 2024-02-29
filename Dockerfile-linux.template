@@ -42,6 +42,7 @@ RUN set -eux; \
 		libbluetooth-dev \
 		tk-dev \
 		uuid-dev \
+		systemtap-sdt-dev \
 {{ ) end -}}
 	; \
 	rm -rf /var/lib/apt/lists/*
@@ -135,6 +136,7 @@ RUN set -eux; \
 		wget \
 		xz-utils \
 		zlib1g-dev \
+		systemtap-sdt-dev \
 	; \
 	\
 {{ ) else "" end -}}
@@ -157,6 +159,8 @@ RUN set -eux; \
 		--enable-optimizations \
 		--enable-option-checking=fatal \
 		--enable-shared \
+		--with-pydebug \
+		--with-dtrace \
 {{
 	# <3.10 does not have -fno-semantic-interposition enabled and --with-lto does nothing for performance
 	if [ "3.8", "3.9" ] | index(rcVersion) then "" else (
@@ -175,9 +179,6 @@ RUN set -eux; \
 	EXTRA_CFLAGS="$(dpkg-buildflags --get CFLAGS)"; \
 	LDFLAGS="$(dpkg-buildflags --get LDFLAGS)"; \
 {{ ) end -}}
-{{ if is_slim or is_alpine then ( -}}
-	LDFLAGS="${LDFLAGS:--Wl},--strip-all"; \
-{{ ) else "" end -}}
 	make -j "$nproc" \
 		"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}" \
 		"LDFLAGS=${LDFLAGS:-}" \
@@ -193,14 +194,12 @@ RUN set -eux; \
 		python \
 	; \
 	make install; \
-{{ if is_alpine or is_slim then "" else ( -}}
 	\
 # enable GDB to load debugging data: https://github.com/docker-library/python/pull/701
 	bin="$(readlink -ve /usr/local/bin/python3)"; \
 	dir="$(dirname "$bin")"; \
 	mkdir -p "/usr/share/gdb/auto-load/$dir"; \
 	cp -vL Tools/gdb/libpython.py "/usr/share/gdb/auto-load/$bin-gdb.py"; \
-{{ ) end -}}
 	\
 	cd /; \
 	rm -rf /usr/src/python; \
