@@ -29,6 +29,7 @@ RUN set -eux; \
 		gnupg \
 		tar \
 		xz \
+		git \
 		\
 		bluez-dev \
 		bzip2-dev \
@@ -36,6 +37,8 @@ RUN set -eux; \
 		expat-dev \
 		findutils \
 		gcc \
+		g++ \
+		gdb \
 		gdbm-dev \
 		libc-dev \
 		libffi-dev \
@@ -54,7 +57,18 @@ RUN set -eux; \
 		util-linux-dev \
 		xz-dev \
 		zlib-dev \
+		musl-obstack-dev \
+		elfutils-dev \
 	; \
+	\
+	mkdir -p /usr/src/systemtap; \
+	git clone --depth 1 https://github.com/cdkey/systemtap.git /usr/src/systemtap ; \
+	cd /usr/src/systemtap; \
+	nproc="$(nproc)"; \
+	./configure --prefix=/usr/; \
+	make -j "$nproc" all; \
+	make install; \
+	cd ~; \
 	\
 	wget -O python.tar.xz "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz"; \
 	wget -O python.tar.xz.asc "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz.asc"; \

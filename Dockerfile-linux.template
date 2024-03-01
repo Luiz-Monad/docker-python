@@ -84,6 +84,7 @@ RUN set -eux; \
 		gnupg \
 		tar \
 		xz \
+		git \
 		\
 		bluez-dev \
 		bzip2-dev \
@@ -91,6 +92,8 @@ RUN set -eux; \
 		expat-dev \
 		findutils \
 		gcc \
+		g++ \
+		gdb \
 		gdbm-dev \
 		libc-dev \
 		libffi-dev \
@@ -109,7 +112,18 @@ RUN set -eux; \
 		util-linux-dev \
 		xz-dev \
 		zlib-dev \
+		musl-obstack-dev \
+		elfutils-dev \
 	; \
+	\
+	mkdir -p /usr/src/systemtap; \
+	git clone --depth 1 https://github.com/cdkey/systemtap.git /usr/src/systemtap ; \
+	cd /usr/src/systemtap; \
+	nproc="$(nproc)"; \
+	./configure --prefix=/usr/; \
+	make -j "$nproc" all; \
+	make install; \
+	cd ~; \
 	\
 {{ ) elif is_slim then ( -}}
 	savedAptMark="$(apt-mark showmanual)"; \
@@ -117,6 +131,7 @@ RUN set -eux; \
 	apt-get install -y --no-install-recommends \
 		dpkg-dev \
 		gcc \
+		gdb \
 		gnupg \
 		libbluetooth-dev \
 		libbz2-dev \

@@ -33,6 +33,7 @@ RUN set -eux; \
 	apt-get install -y --no-install-recommends \
 		dpkg-dev \
 		gcc \
+		gdb \
 		gnupg \
 		libbluetooth-dev \
 		libbz2-dev \
