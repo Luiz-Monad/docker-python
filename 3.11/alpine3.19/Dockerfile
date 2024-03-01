@@ -30,6 +30,9 @@ RUN set -eux; \
 		tar \
 		xz \
 		git \
+		shadow \
+		bash \
+		coreutils \
 		\
 		bluez-dev \
 		bzip2-dev \
@@ -62,10 +65,10 @@ RUN set -eux; \
 	; \
 	\
 	mkdir -p /usr/src/systemtap; \
-	git clone --depth 1 https://github.com/cdkey/systemtap.git /usr/src/systemtap ; \
+	git clone --depth 1 https://github.com/Luiz-Monad/systemtap.git /usr/src/systemtap ; \
 	cd /usr/src/systemtap; \
 	nproc="$(nproc)"; \
-	./configure --prefix=/usr/; \
+	./configure; \
 	make -j "$nproc" all; \
 	make install; \
 	cd ~; \
