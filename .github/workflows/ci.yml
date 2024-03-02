@@ -16,10 +16,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
+  
   generate-jobs:
     name: Generate Jobs
     runs-on: ubuntu-latest
+    environment: docker-hub
     outputs:
       strategy: ${{ steps.generate-jobs.outputs.strategy }}
     steps:
@@ -46,6 +47,24 @@ jobs:
             )
           ')"
 
+          base_tag="${{vars.REGISTRY_ADDRESS}}/${{vars.REGISTRY_USERNAME}}/${{vars.REGISTRY_REPOSITORY}}"
+          strategy="$(jq <<<"$strategy" --arg prefix "$base_tag" -c '
+            .matrix.include |= map(
+              .runs.push = (
+                .meta.entries
+                | map(
+                  .tags
+                  | map(
+                      "\(. | gsub("^[^:]+"; $prefix) )" as $replaced |
+                      "docker tag \(.) \($replaced)",
+                      "docker push \($replaced)"
+                  )[]
+                )
+                | join("\n")
+              )
+            )
+          ')"
+
           EOF="EOF-$RANDOM-$RANDOM-$RANDOM"
           echo "strategy<<$EOF" >> "$GITHUB_OUTPUT"
           jq <<<"$strategy" . | tee -a "$GITHUB_OUTPUT"
@@ -56,8 +75,15 @@ jobs:
     strategy: ${{ fromJson(needs.generate-jobs.outputs.strategy) }}
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
+    environment: docker-hub
     steps:
       - uses: actions/checkout@v3
+      - name: Login ${{ vars.REGISTRY_ADDRESS }}
+        uses: docker/login-action@28218f9b04b4f3f62068d7b6ce6ca5b26e35336c
+        with:
+          registry: ${{ vars.REGISTRY_ADDRESS }}
+          username: ${{ vars.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_TOKEN }}      
       - name: Prepare Environment
         run: ${{ matrix.runs.prepare }}
       - name: Pull Dependencies
@@ -68,5 +94,7 @@ jobs:
         run: ${{ matrix.runs.history }}
       - name: Test ${{ matrix.name }}
         run: ${{ matrix.runs.test }}
-      - name: '"docker images"'
+      - name: Images ${{ matrix.name }}
         run: ${{ matrix.runs.images }}
+      - name: Push ${{ matrix.name }}
+        run: ${{ matrix.runs.push }}
